@@ -11,7 +11,7 @@
 //+------------------------------------------------------------------+
 #include <Expert\Expert.mqh>
 #include <Expert\Signal\SignalMACD.mqh>
-#include <Expert\Trailing\TrailingNone.mqh>
+#include <Expert\Trailing\TrailingBottomTop.mqh>
 #include <Expert\Money\MoneyNone.mqh>
 //+------------------------------------------------------------------+
 //| Inputs                                                           |
@@ -75,7 +75,7 @@ int OnInit(void)
       return(-4);
      }
 //--- Creation of trailing object
-   CTrailingNone *trailing=new CTrailingNone;
+   CTrailingBottomTop *trailing=new CTrailingBottomTop;
    if(trailing==NULL)
      {
       //--- failed
