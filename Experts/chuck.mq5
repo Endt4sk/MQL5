@@ -30,6 +30,9 @@ input int    Inp_Signal_MACD_StopLoss    =20;
 //| Global expert object                                             |
 //+------------------------------------------------------------------+
 CExpert ExtExpert;
+int zigzag_handle, last_insert_index = -1;
+bool IsLastHigh;
+double zigzag_high[], zigzag_low[], zigzag_value[100];
 //+------------------------------------------------------------------+
 //| Initialization function of the expert                            |
 //+------------------------------------------------------------------+
@@ -134,6 +137,29 @@ int OnInit(void)
       ExtExpert.Deinit();
       return(-11);
      }
+     
+   MqlParam CustomZigZag_prop[];
+   ArrayResize(CustomZigZag_prop,4);
+   
+   CustomZigZag_prop[0].type=TYPE_STRING;
+   CustomZigZag_prop[0].string_value="Examples\\ZigZag";
+   
+   CustomZigZag_prop[1].type=TYPE_INT;
+   CustomZigZag_prop[1].integer_value=12;
+   
+   CustomZigZag_prop[2].type=TYPE_INT;
+   CustomZigZag_prop[2].integer_value=5;
+   
+   CustomZigZag_prop[3].type=TYPE_INT;
+   CustomZigZag_prop[3].integer_value=3;
+
+   
+   zigzag_handle = IndicatorCreate(Symbol(),Period(),IND_CUSTOM,4,CustomZigZag_prop);
+     {
+      printf(__FUNCTION__+": error initializing object");
+      return(false);
+     }
+    
 //--- succeed
    return(INIT_SUCCEEDED);
   }
@@ -147,9 +173,55 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 //| Function-event handler "tick"                                    |
 //+------------------------------------------------------------------+
+
+void UpdateValues()
+{
+   if(CopyBuffer(zigzag_handle,1,0,1,zigzag_high)<=0) return;
+   if(CopyBuffer(zigzag_handle,2,0,1,zigzag_low)<=0) return;
+   //--- set indexation of array MA[] as timeseries
+   ArraySetAsSeries(zigzag_high,true);
+   ArraySetAsSeries(zigzag_low,true);
+   int i, offset;
+   printf("should be called by every hour");
+   if(zigzag_high[0] > 0.0)
+   {    
+      if(last_insert_index == -1 || !IsLastHigh)
+      {
+         last_insert_index = (last_insert_index + 1) % ValueSize;
+      }
+      zigzag_value[last_insert_index] = zigzag_high[0];
+      IsLastHigh = true;
+      for(i = 1; i <= ValueSize; i++)
+      {
+         offset = (last_insert_index + i) % ValueSize;
+         if(zigzag_value[offset] > 0.0)
+         {
+            printf("value[%d] = %f", offset, zigzag_value[offset]);
+         }
+      }
+   }
+   else if(zigzag_low[0] > 0.0)
+   {
+      if(last_insert_index == -1 || IsLastHigh)
+      {
+         last_insert_index = (last_insert_index + 1) % ValueSize;
+      }
+      zigzag_value[last_insert_index] = zigzag_low[0];
+      IsLastHigh = false;
+      for(i = 1; i <= ValueSize; i++)
+      {
+         offset = (last_insert_index + i) % ValueSize;
+         if(zigzag_value[offset] > 0.0)
+         {
+            printf("value[%d] = %f", offset, zigzag_value[offset]);
+         }
+      }
+   }
+}
+
 void OnTick(void)
   {
-   ExtExpert.OnTick();
+     UpdateValues();
   }
 //+------------------------------------------------------------------+
 //| Function-event handler "trade"                                   |

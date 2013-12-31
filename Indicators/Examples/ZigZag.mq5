@@ -289,6 +289,7 @@ int OnCalculate(const int rates_total,
             break;
          default: return(rates_total);
         }
+        //printf("shift = %d, zigzag = %f", shift, ZigzagBuffer[shift]);
      }
 
 //--- return value of prev_calculated for next call

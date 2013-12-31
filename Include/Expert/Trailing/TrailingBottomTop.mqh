@@ -4,6 +4,7 @@
 //|                                              http://www.mql5.com |
 //+------------------------------------------------------------------+
 #include <Expert\ExpertTrailing.mqh>
+#define ValueSize 4
 class CTrailingBottomTop : public CExpertTrailing
   {
 protected:
@@ -12,7 +13,10 @@ protected:
    int               m_ExtDepth;
    int               m_ExtDeviation;
    int               m_ExtBackstep;
-
+   int               last_insert_index;
+   bool              IsLastHigh;
+   double            value[ValueSize]; 
+   
 
 public:
                      CTrailingBottomTop(void);
@@ -21,6 +25,7 @@ public:
    void              ExtDepth(int ExtDepth)                  { m_ExtDepth=ExtDepth;   }
    void              ExtDeviation(int ExtDeviation)                    { m_ExtDeviation=ExtDeviation;     }
    void              ExtBackstep(int ExtBackstep)       { m_ExtBackstep=ExtBackstep;   }
+   virtual void      UpdateValues();
    virtual bool      InitIndicators(CIndicators *indicators);
    virtual bool      ValidationSettings(void);
    //---
@@ -32,7 +37,9 @@ public:
 //+------------------------------------------------------------------+
 void CTrailingBottomTop::CTrailingBottomTop(void) : m_ExtDepth(12),
                                       m_ExtDeviation(5),
-                                      m_ExtBackstep(3)
+                                      m_ExtBackstep(3),
+                                      last_insert_index(-1),
+                                      IsLastHigh(false)
   {
   }
 //+------------------------------------------------------------------+
@@ -100,6 +107,49 @@ bool CTrailingBottomTop::InitIndicators(CIndicators *indicators)
 //--- ok
    return(true);
   }
+  
+void CTrailingBottomTop::UpdateValues()
+{
+   double high = NormalizeDouble(m_zigzag.GetData(1, 0),m_symbol.Digits());
+   double low = NormalizeDouble(m_zigzag.GetData(2, 0),m_symbol.Digits());
+   int i, offset;
+   printf("should be called by every hour");
+   if(high > 0.0)
+   {    
+      if(last_insert_index == -1 || !IsLastHigh)
+      {
+         last_insert_index = (last_insert_index + 1) % ValueSize;
+      }
+      value[last_insert_index] = high;
+      IsLastHigh = true;
+      for(i = 1; i <= ValueSize; i++)
+      {
+         offset = (last_insert_index + i) % ValueSize;
+         if(value[offset] > 0.0)
+         {
+            printf("value[%d] = %f", offset, value[offset]);
+         }
+      }
+   }
+   else if(low > 0.0)
+   {
+      if(last_insert_index == -1 || IsLastHigh)
+      {
+         last_insert_index = (last_insert_index + 1) % ValueSize;
+      }
+      value[last_insert_index] = high;
+      IsLastHigh = false;
+      for(i = 1; i <= ValueSize; i++)
+      {
+         offset = (last_insert_index + i) % ValueSize;
+         if(value[offset] > 0.0)
+         {
+            printf("value[%d] = %f", offset, value[offset]);
+         }
+      }
+   }
+}
+
 //+------------------------------------------------------------------+
 //| Checking trailing stop and/or profit for long position.          |
 //+------------------------------------------------------------------+
@@ -109,6 +159,8 @@ bool CTrailingBottomTop::CheckTrailingStopLong(CPositionInfo *position,double &s
    if(position==NULL)
       return(false);
 //---
+
+   UpdateValues();
    double level =NormalizeDouble(m_symbol.Bid()-m_symbol.StopsLevel()*m_symbol.Point(),m_symbol.Digits());
    double new_sl=NormalizeDouble(m_zigzag.GetData(0, 0),m_symbol.Digits());
    double pos_sl=position.StopLoss();
