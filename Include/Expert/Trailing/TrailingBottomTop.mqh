@@ -70,7 +70,7 @@ bool CTrailingBottomTop::CheckTrailingStopLong(CPositionInfo *position,double &s
    printf("zigzag0 = %f", CShare.zigzag_value[CShare.index(0)]);
    if(CShare.IsLastHigh)
    {
-      if(CShare.zigzag_value[CShare.index(0)] < CShare.zigzag_value[CShare.index(2)])
+      //if(CShare.zigzag_value[CShare.index(0)] < CShare.zigzag_value[CShare.index(2)])
       {
          new_sl = CShare.zigzag_value[CShare.index(1)];
       }
@@ -79,10 +79,16 @@ bool CTrailingBottomTop::CheckTrailingStopLong(CPositionInfo *position,double &s
    {
       new_sl = (CShare.zigzag_value[CShare.index(1)] - CShare.zigzag_value[CShare.index(2)]) / 2.0 + CShare.zigzag_value[CShare.index(2)];
    }
+   
    printf("new_sl = %f", new_sl);
    
    double pos_sl=position.StopLoss();
    double base  =(pos_sl==0.0) ? position.PriceOpen() : pos_sl;
+   
+   if(pos_sl < position.PriceOpen() && position.PriceCurrent()- position.PriceOpen() > position.PriceOpen() - pos_sl)
+   {
+      new_sl = MathMax(new_sl, position.PriceOpen());
+   }
 //---
    sl=EMPTY_VALUE;
    tp=EMPTY_VALUE;
@@ -104,6 +110,20 @@ bool CTrailingBottomTop::CheckTrailingStopShort(CPositionInfo *position,double &
    double new_sl=0.0;
    double pos_sl=position.StopLoss();
    double base  =(pos_sl==0.0) ? position.PriceOpen() : pos_sl;
+   
+   if(CShare.IsLastHigh)
+   {
+      //if(CShare.zigzag_value[CShare.index(0)] < CShare.zigzag_value[CShare.index(2)])
+      new_sl = (CShare.zigzag_value[CShare.index(2)] - CShare.zigzag_value[CShare.index(1)]) / 2.0 + CShare.zigzag_value[CShare.index(1)];
+   }
+   else
+   {
+      new_sl = CShare.zigzag_value[CShare.index(1)];
+   }
+   if(pos_sl > position.PriceOpen() && position.PriceOpen() - position.PriceCurrent() > pos_sl - position.PriceOpen())
+   {
+      new_sl = position.PriceOpen();//
+   }
 //---
    sl=EMPTY_VALUE;
    tp=EMPTY_VALUE;

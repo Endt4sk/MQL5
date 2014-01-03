@@ -24,7 +24,7 @@ bool         Expert_EveryTick            =false;
 input int    Inp_Signal_MACD_PeriodFast  =12;
 input int    Inp_Signal_MACD_PeriodSlow  =24;
 input int    Inp_Signal_MACD_PeriodSignal=9;
-input int    Inp_Signal_MACD_TakeProfit  =50;
+input int    Inp_Signal_MACD_TakeProfit  =0;
 input int    Inp_Signal_MACD_StopLoss    =20;
 //+------------------------------------------------------------------+
 //| Global expert object                                             |
