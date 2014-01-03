@@ -9,7 +9,7 @@
 //+------------------------------------------------------------------+
 //| Include                                                          |
 //+------------------------------------------------------------------+
-#include <Expert\Expert.mqh>
+#include <Expert\ExpertChuck.mqh>
 #include <Expert\Signal\SignalMACD.mqh>
 #include <Expert\Trailing\TrailingBottomTop.mqh>
 #include <Expert\Money\MoneyNone.mqh>
@@ -29,13 +29,26 @@ input int    Inp_Signal_MACD_StopLoss    =20;
 //+------------------------------------------------------------------+
 //| Global expert object                                             |
 //+------------------------------------------------------------------+
-CExpert ExtExpert;
-int zigzag_handle, last_insert_index = -1;
-bool IsLastHigh;
-double zigzag_high[], zigzag_low[], zigzag_value[100];
+CExpertChuck ExtExpert;
+
 //+------------------------------------------------------------------+
 //| Initialization function of the expert                            |
 //+------------------------------------------------------------------+
+
+static int BARS;
+//+------------------------------------------------------------------+
+//| NewBar function                                                  |
+//+------------------------------------------------------------------+
+bool IsNewBar()
+   {
+      if(BARS!=Bars(_Symbol,_Period))
+        {
+            BARS=Bars(_Symbol,_Period);
+            return(true);
+        }
+      return(false);
+   }
+
 int OnInit(void)
   {
 //--- Initializing expert
@@ -95,6 +108,7 @@ int OnInit(void)
       return(-6);
      }
 //--- Set trailing parameters
+   trailing.SetCShare(GetPointer(ExtExpert.CShare));
 //--- Check trailing parameters
    if(!trailing.ValidationSettings())
      {
@@ -154,7 +168,7 @@ int OnInit(void)
    CustomZigZag_prop[3].integer_value=3;
 
    
-   zigzag_handle = IndicatorCreate(Symbol(),Period(),IND_CUSTOM,4,CustomZigZag_prop);
+   ExtExpert.CShare.zigzag_handle = IndicatorCreate(Symbol(),Period(),IND_CUSTOM,4,CustomZigZag_prop);
      {
       printf(__FUNCTION__+": error initializing object");
       return(false);
@@ -176,44 +190,48 @@ void OnDeinit(const int reason)
 
 void UpdateValues()
 {
-   if(CopyBuffer(zigzag_handle,1,0,1,zigzag_high)<=0) return;
-   if(CopyBuffer(zigzag_handle,2,0,1,zigzag_low)<=0) return;
+   if(CopyBuffer(ExtExpert.CShare.zigzag_handle,1,1,1,ExtExpert.CShare.zigzag_high)<=0) return;
+   if(CopyBuffer(ExtExpert.CShare.zigzag_handle,2,1,1,ExtExpert.CShare.zigzag_low)<=0) return;
+   if(CopyBuffer(ExtExpert.CShare.zigzag_handle,0,1,1,ExtExpert.CShare.zigzag)<=0) return;
    //--- set indexation of array MA[] as timeseries
-   ArraySetAsSeries(zigzag_high,true);
-   ArraySetAsSeries(zigzag_low,true);
+   ArraySetAsSeries(ExtExpert.CShare.zigzag_high,true);
+   ArraySetAsSeries(ExtExpert.CShare.zigzag_low,true);
+   ArraySetAsSeries(ExtExpert.CShare.zigzag,true);
    int i, offset;
    printf("should be called by every hour");
-   if(zigzag_high[0] > 0.0)
+   printf("zigzag_high = %f, zigzag_low = %f", ExtExpert.CShare.zigzag_high[0], ExtExpert.CShare.zigzag_low[0]);
+   if(ExtExpert.CShare.zigzag[0] > 0.0) printf("zigzag = %f", ExtExpert.CShare.zigzag[0]);
+   if(ExtExpert.CShare.zigzag_high[0] > 0.0)
    {    
-      if(last_insert_index == -1 || !IsLastHigh)
+      if(ExtExpert.CShare.last_insert_index == -1 || !ExtExpert.CShare.IsLastHigh)
       {
-         last_insert_index = (last_insert_index + 1) % ValueSize;
+         ExtExpert.CShare.last_insert_index = (ExtExpert.CShare.last_insert_index + 1) % ValueSize;
       }
-      zigzag_value[last_insert_index] = zigzag_high[0];
-      IsLastHigh = true;
+      ExtExpert.CShare.zigzag_value[ExtExpert.CShare.last_insert_index] = ExtExpert.CShare.zigzag_high[0];
+      ExtExpert.CShare.IsLastHigh = true;
       for(i = 1; i <= ValueSize; i++)
       {
-         offset = (last_insert_index + i) % ValueSize;
-         if(zigzag_value[offset] > 0.0)
+         offset = (ExtExpert.CShare.last_insert_index + i) % ValueSize;
+         if(ExtExpert.CShare.zigzag_value[offset] > 0.0)
          {
-            printf("value[%d] = %f", offset, zigzag_value[offset]);
+            printf("value[%d] = %f", offset, ExtExpert.CShare.zigzag_value[offset]);
          }
       }
    }
-   else if(zigzag_low[0] > 0.0)
+   else if(ExtExpert.CShare.zigzag_low[0] > 0.0)
    {
-      if(last_insert_index == -1 || IsLastHigh)
+      if(ExtExpert.CShare.last_insert_index == -1 || ExtExpert.CShare.IsLastHigh)
       {
-         last_insert_index = (last_insert_index + 1) % ValueSize;
+         ExtExpert.CShare.last_insert_index = (ExtExpert.CShare.last_insert_index + 1) % ValueSize;
       }
-      zigzag_value[last_insert_index] = zigzag_low[0];
-      IsLastHigh = false;
+      ExtExpert.CShare.zigzag_value[ExtExpert.CShare.last_insert_index] = ExtExpert.CShare.zigzag_low[0];
+      ExtExpert.CShare.IsLastHigh = false;
       for(i = 1; i <= ValueSize; i++)
       {
-         offset = (last_insert_index + i) % ValueSize;
-         if(zigzag_value[offset] > 0.0)
+         offset = (ExtExpert.CShare.last_insert_index + i) % ValueSize;
+         if(ExtExpert.CShare.zigzag_value[offset] > 0.0)
          {
-            printf("value[%d] = %f", offset, zigzag_value[offset]);
+            printf("value[%d] = %f", offset, ExtExpert.CShare.zigzag_value[offset]);
          }
       }
    }
@@ -221,7 +239,14 @@ void UpdateValues()
 
 void OnTick(void)
   {
-     UpdateValues();
+   MqlDateTime tm;
+      TimeCurrent(tm);
+     if(tm.min == 1)
+     {
+         //printf("close[0] = ", Close(0));
+         UpdateValues();
+     }
+     ExtExpert.OnTick();
   }
 //+------------------------------------------------------------------+
 //| Function-event handler "trade"                                   |

@@ -289,7 +289,12 @@ int OnCalculate(const int rates_total,
             break;
          default: return(rates_total);
         }
+         MqlDateTime tm;
+      TimeCurrent(tm);
+      if(tm.min == 0 && ZigzagBuffer[shift] != 0.0)
+      {
         //printf("shift = %d, zigzag = %f", shift, ZigzagBuffer[shift]);
+        }
      }
 
 //--- return value of prev_calculated for next call
