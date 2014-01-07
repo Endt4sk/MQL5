@@ -118,6 +118,8 @@ bool CSignalChuck::InitMBands(CIndicators *indicators)
 int CSignalChuck::LongCondition(void)
   {
    int result=0;
+   
+   
    MqlDateTime tm;
    TimeCurrent(tm);
    m_base_price=0.0;
@@ -131,7 +133,7 @@ int CSignalChuck::LongCondition(void)
    {
       printf("close[1] = %f, open[1] = %f, m_bands.lower = %f", Close(1), Open(1), m_bands.Lower(1));
       printf("index[0] = %f, index[2] = %f", CShare.zigzag_value[CShare.index(0)], CShare.zigzag_value[CShare.index(2)]);
-      if(CShare.zigzag_value[CShare.index(0)] > CShare.zigzag_value[CShare.index(2)])
+      if(CShare.zigzag_value[CShare.index(0)] > CShare.zigzag_value[CShare.index(2)] && CShare.zigzag_value[CShare.index(1)] > CShare.zigzag_value[CShare.index(3)])
       {
          if(Close(1) > Open(1))
          {

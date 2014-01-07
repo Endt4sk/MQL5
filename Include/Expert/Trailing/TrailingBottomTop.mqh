@@ -84,8 +84,8 @@ bool CTrailingBottomTop::CheckTrailingStopLong(CPositionInfo *position,double &s
    
    double pos_sl=position.StopLoss();
    double base  =(pos_sl==0.0) ? position.PriceOpen() : pos_sl;
-   
-   if(pos_sl < position.PriceOpen() && position.PriceCurrent()- position.PriceOpen() > position.PriceOpen() - pos_sl)
+   printf("pos_sl = %f, priceOpen = %f, delta1 = %f, delta2 = %f", pos_sl, position.PriceOpen(), position.PriceCurrent()- position.PriceOpen(), position.PriceOpen() - pos_sl);
+   if(pos_sl < position.PriceOpen() && High(1) - position.PriceOpen() > position.PriceOpen() - pos_sl)
    {
       new_sl = MathMax(new_sl, position.PriceOpen());
    }

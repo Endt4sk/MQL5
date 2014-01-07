@@ -238,7 +238,6 @@ void UpdateValues()
          offset=(ExtExpert.CShare.last_insert_index+i)%ValueSize;
          if(ExtExpert.CShare.zigzag_value[offset]>0.0)
            {
-            DebugBreak();
             printf("value[%d] = %f",offset,ExtExpert.CShare.zigzag_value[offset]);
            }
         }
@@ -265,6 +264,9 @@ void OnTick(void)
 //+------------------------------------------------------------------+
 void OnTrade(void)
   {
+    HistorySelect(0,TimeCurrent());
+    uint     total=HistoryOrdersTotal();
+    //if(
    ExtExpert.OnTrade();
   }
 //+------------------------------------------------------------------+
