@@ -17,6 +17,10 @@
 //| Inputs                                                           |
 //+------------------------------------------------------------------+
 //--- inputs for expert
+
+input int      timer=1;              // timer value, sec
+input bool     timer_switch_on=true; // timer on
+
 input string             Inp_Expert_Title       ="ExpertMAMA";
 int                      Expert_MagicNumber     =12003;
 bool                     Expert_EveryTick       =false;
@@ -141,6 +145,12 @@ int OnInit(void)
       ExtExpert.Deinit();
       return(-11);
      }
+     
+     if(timer_switch_on)
+     {
+      EventSetTimer(timer);
+     }
+
 //--- succeed
    return(INIT_SUCCEEDED);
   }

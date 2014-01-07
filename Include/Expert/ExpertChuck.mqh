@@ -15,7 +15,7 @@ class CShareInfo : public CObject
    int zigzag_handle, last_insert_index;
    bool IsLastHigh;
    double zigzag_high[], zigzag_low[], zigzag[], zigzag_value[ValueSize];
-   
+   double RPoint;
    public:
       int index(int i){return ((last_insert_index - i + ValueSize) % ValueSize);}
 };
